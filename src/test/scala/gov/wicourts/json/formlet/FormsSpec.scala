@@ -138,6 +138,20 @@ class FormsSpec extends Specification {
     }
   }
 
+  "A JSON form" >> {
+    "should be able to render its value" >> {
+      val view = json("test1", Parse.parseOption("""{"test2":"testValue"}""")).view(None)
+      view.toJson.nospaces must_== """{"test1":{"value":{"test2":"testValue"}}}"""
+    }
+
+    "should be able to extract its value" >> {
+      val result = json("test1", None).eval(
+        parse("""{"test1":{"test2":"testValue"}}""")
+      )
+      result must_== Parse.parseOption("""{"test2":"testValue"}""").success
+    }
+  }
+
   "A string array form" >> {
     "should be able to render its value" >> {
       val view = listOfString("colors", List("red", "blue", "green").some).view(None)
@@ -174,6 +188,30 @@ class FormsSpec extends Specification {
       )
 
       result must_== None.success
+    }
+  }
+
+  "A JSON array form" >> {
+    "should be able to render its value" >> {
+      val jsonList = List(
+        Parse.parseOption("""{"color":"red"}"""),
+        Parse.parseOption("""{"size":"small"}"""),
+        Parse.parseOption("""{"count":2,"foo":"bar"}""")
+      ).flatten
+      val view = listOfJson("items", jsonList.some).view(None)
+      view.toJson.nospaces must_== """{"items":{"value":[{"color":"red"},{"size":"small"},{"count":2,"foo":"bar"}]}}"""
+    }
+
+    "should be able to extract its value" >> {
+      val jsonList = List(
+        Parse.parseOption("""{"color":"red"}"""),
+        Parse.parseOption("""{"size":"small"}"""),
+        Parse.parseOption("""{"count":2,"foo":"bar"}""")
+      ).flatten
+      val result = listOfJson("items", None).eval(
+        parse("""{"items":[{"color":"red"},{"size":"small"},{"count":2,"foo":"bar"}]}""")
+      )
+      result must_== jsonList.some.success
     }
   }
 

@@ -20,6 +20,8 @@ import scalaz.Id.Id
 
 import scala.language.higherKinds
 
+import Predef.identity
+
 object Forms {
   private def primitive[M[_]: Applicative, A](
     descr: String,
@@ -126,6 +128,19 @@ object Forms {
   ): Json => NonEmptyList[String] \/ List[A] = j =>
     check(name, s"array of $descr", j.array) >>= (_.traverseU(i => check(name, descr, fromItem(i))))
 
+  def listOfJsonM[M[_] : Applicative](
+    name: String,
+    value: Option[List[Json]]
+  ): FieldFormlet[M, Option[List[Json]]] =
+    primitive(
+      "array of JSON",
+      l => Json.array(l: _*),
+      _.isArray,
+      fromArray(name, "JSON", j => j.some),
+      name,
+      value
+    )
+
   def listOfStringM[M[_] : Applicative](
     name: String,
     value: Option[List[String]]
@@ -180,6 +195,19 @@ object Forms {
       )
     result.map(_.map(_.trim).filterNot(_.isEmpty))
   }
+
+  def jsonM[M[_] : Applicative](
+    name: String,
+    value: Option[Json]
+  ): FieldFormlet[M, Option[Json]] =
+    primitive(
+      "JSON",
+      identity,
+      _ => true,
+      x => x.right,
+      name,
+      value
+    )
 
   def numberM[M[_] : Applicative](
     name: String,
@@ -261,11 +289,23 @@ object Forms {
     ): IdFieldFormlet[Option[List[Boolean]]] =
       listOfBooleanM(name, value)
 
+    def listOfJson(
+      name: String,
+      value: Option[List[Json]]
+    ): IdFieldFormlet[Option[List[Json]]] =
+      listOfJsonM(name, value)
+
     def string(
       name: String,
       value: Option[String]
     ): IdFieldFormlet[Option[String]] =
       stringM(name, value)
+
+    def json(
+      name: String,
+      value: Option[Json]
+    ): IdFieldFormlet[Option[Json]] =
+      jsonM(name, value)
 
     def number(
       name: String,

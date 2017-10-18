@@ -22,7 +22,7 @@ class FormletSpec extends Specification with ScalaCheck {
       )
 
       "Applicative" >> {
-        type SampleFormlet[A] = Formlet[Id, Int, String, A, String]
+        type SampleFormlet[A] = Formlet[Id, Int, String, String, A]
 
         def intFormlet[A](f: Int => A): Arbitrary[SampleFormlet[A]] = Arbitrary(
           Gen.frequency(
@@ -46,7 +46,7 @@ class FormletSpec extends Specification with ScalaCheck {
       }
 
       "Bifunctor" >> {
-        type SampleFormlet[A, B] = Formlet[Id, Int, A, B, String]
+        type SampleFormlet[A, B] = Formlet[Id, Int, String, A, B]
 
         def intFormlet[A, B](f: Int => Int): Arbitrary[SampleFormlet[Int, Int]] = Arbitrary(
           Gen.frequency(
@@ -70,7 +70,7 @@ class FormletSpec extends Specification with ScalaCheck {
       }
 
       "Contravariant" >> {
-        type SampleFormlet[A] = Formlet[Id, A, Int, Int, String]
+        type SampleFormlet[A] = Formlet[Id, A, String, Int, Int]
 
         val sampleFormlet: Arbitrary[SampleFormlet[Int]] = Arbitrary(
           Gen.frequency(

@@ -59,7 +59,7 @@ object Forms {
 
   def nestedM[M[_] : Functor, A, V <: JsonBuilder](
     name: String,
-    inner: JsonFormlet[M, ValidationErrors, A, V]
+    inner: JsonFormlet[M, V, ValidationErrors, A]
   ): ObjectFormlet[M, A] =
     namedContext(name, inner).mapResult((r, v) => (
       r.leftMap(x => ValidationErrors.objectErrors(List((name, x)))),
@@ -87,7 +87,7 @@ object Forms {
     defaultValue: List[ObjectFormlet[M, A]]
   )(
     implicit M: Applicative[M]
-  ): JsonFormlet[M, ValidationErrors, List[A], JsonArrayBuilder] =
+  ): JsonFormlet[M, JsonArrayBuilder, ValidationErrors, List[A]] =
     Formlet { c =>
       val l: List[(Option[Cursor], ObjectFormlet[M, A])] =
         if (c.isEmpty || c.map(_.focus).exists(_.string.exists(_ === "")))
@@ -322,12 +322,12 @@ object Forms {
     def list[E, A](
       template: IdObjectFormlet[A],
       defaultValue: List[IdObjectFormlet[A]]
-    ): JsonFormlet[Id, ValidationErrors, List[A], JsonArrayBuilder] =
+    ): JsonFormlet[Id, JsonArrayBuilder, ValidationErrors, List[A]] =
       listM[Id, A](template, defaultValue)
 
     def nested[A, V <: JsonBuilder](
       name: String,
-      inner: JsonFormlet[Id, ValidationErrors, A, V]
+      inner: JsonFormlet[Id, V, ValidationErrors, A]
     ): IdObjectFormlet[A] =
       nestedM[Id, A, V](name, inner)
   }

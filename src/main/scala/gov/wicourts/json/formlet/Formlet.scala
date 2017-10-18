@@ -16,58 +16,58 @@ import scala.language.higherKinds
 
 import Predef.identity
 
-case class Formlet[M[_], I, E, A, V](run: I => M[(Validation[E, A], V)]) {
+case class Formlet[M[_], I, V, E, A](run: I => M[(Validation[E, A], V)]) {
   def eval(i: I)(implicit M: Functor[M]): M[Validation[E, A]] =
     M.map(run(i))(_._1)
 
   def view(i: I)(implicit M: Functor[M]): M[V] =
     M.map(run(i))(_._2)
 
-  def bimap[B, C](f: E => B, g: A => C)(implicit M: Functor[M]): Formlet[M, I, B, C, V] =
+  def bimap[B, C](f: E => B, g: A => C)(implicit M: Functor[M]): Formlet[M, I, V, B, C] =
     mapResult((result, view) => (result bimap (f, g), view))
 
-  def leftMap[B](f: E => B)(implicit M: Functor[M]): Formlet[M, I, B, A, V] =
+  def leftMap[B](f: E => B)(implicit M: Functor[M]): Formlet[M, I, V, B, A] =
     bimap(f, identity)
 
-  def map[B](f: A => B)(implicit M: Functor[M]): Formlet[M, I, E, B, V] =
+  def map[B](f: A => B)(implicit M: Functor[M]): Formlet[M, I, V, E, B] =
     mapResult((result, view) => (result map f, view))
 
-  def mapK[G[_], EE, AA, VV](
+  def mapK[G[_], VV, EE, AA](
     f: M[(Validation[E, A], V)] => G[(Validation[EE, AA], VV)]
-  ): Formlet[G, I, EE, AA, VV] = Formlet(c =>
+  ): Formlet[G, I, VV, EE, AA] = Formlet(c =>
     f(run(c))
   )
 
   def mapK_[G[_], B](
     f: M[(Validation[E, A], V)] => G[(Validation[E, B], V)]
-  ): Formlet[G, I, E, B, V] = mapK(f)
+  ): Formlet[G, I, V, E, B] = mapK(f)
 
   def ap[B](
-    f: => Formlet[M, I, E, A => B, V]
+    f: => Formlet[M, I, V, E, A => B]
   )(
     implicit E: Semigroup[E], V: Monoid[V], M: Applicative[M]
-  ): Formlet[M, I, E, B, V] =
+  ): Formlet[M, I, V, E, B] =
     Formlet(c =>
       M.apply2(this.run(c), f.run(c)) { case ((a, v1), (ff, v2)) =>
         (a <*> ff, v1 |+| v2)
       }
     )
 
-  def mapView[U](f: V => U)(implicit M: Functor[M]): Formlet[M, I, E, A, U] =
+  def mapView[U](f: V => U)(implicit M: Functor[M]): Formlet[M, I, U, E, A] =
     mapResult((result, view) => (result, f(view)))
 
   def mapResult[EE, AA, W](
     f: (Validation[E, A], V) => (Validation[EE, AA], W)
   )(
     implicit M: Functor[M]
-  ): Formlet[M, I, EE, AA, W] =
+  ): Formlet[M, I, W, EE, AA] =
     Formlet(c => M.map(run(c))(f.tupled))
 
   def mapValidation[B](
     f: A => Validation[E, B]
   )(
     implicit M: Functor[M]
-  ): Formlet[M, I, E, B, V] = {
+  ): Formlet[M, I, V, E, B] = {
     mapResult((a, v) => ((a.disjunction.flatMap(f(_).disjunction)).validation, v))
   }
 
@@ -76,7 +76,7 @@ case class Formlet[M[_], I, E, A, V](run: I => M[(Validation[E, A], V)]) {
     t: (A => Validation[E, B])*
   )(
     implicit E: Semigroup[E], M: Applicative[M]
-  ): Formlet[M, I, E, B, V] = {
+  ): Formlet[M, I, V, E, B] = {
     val X = Applicative[A => ?].compose[Validation[E, ?]]
     val f = X.sequence(nel(h, IList(t: _*)))
     mapValidation(f).map(_.head)
@@ -86,14 +86,14 @@ case class Formlet[M[_], I, E, A, V](run: I => M[(Validation[E, A], V)]) {
     f: (Validation[E, A], V) => M[(Validation[EE, AA], W)]
   )(
     implicit M: Bind[M]
-  ): Formlet[M, I, EE, AA, W] =
+  ): Formlet[M, I, W, EE, AA] =
     Formlet(c => M.bind(run(c))(f.tupled))
 
   def mapValidationM[B](
     f: A => M[Validation[E, B]]
   )(
     implicit M: Monad[M]
-  ): Formlet[M, I, E, B, V] = {
+  ): Formlet[M, I, V, E, B] = {
     mapResultM((a, v) =>
       M.map(
         EitherT(M.point(a.disjunction))
@@ -110,7 +110,7 @@ case class Formlet[M[_], I, E, A, V](run: I => M[(Validation[E, A], V)]) {
     t: (A => M[Validation[E, B]])*
   )(
     implicit E: Semigroup[E], M: Monad[M]
-  ): Formlet[M, I, E, B, V] = {
+  ): Formlet[M, I, V, E, B] = {
     val X = Applicative[A => ?].compose[M].compose[Validation[E, ?]]
     val f = X.sequence(nel(h, IList(t: _*)))
     mapValidationM(f).map(_.head)
@@ -129,7 +129,7 @@ case class Formlet[M[_], I, E, A, V](run: I => M[(Validation[E, A], V)]) {
     t: ((B, A) => M[Validation[E, C]])*
   )(
     implicit E: Semigroup[E], M: Monad[M]
-  ): Formlet[M, I, E, C, V] = Formlet { c =>
+  ): Formlet[M, I, V, E, C] = Formlet { c =>
     M.bind(other(c)) { b =>
       val h1 = h(b, _: A)
       val t1 = t.map(f => f(b, _: A))
@@ -144,36 +144,36 @@ case class Formlet[M[_], I, E, A, V](run: I => M[(Validation[E, A], V)]) {
     t: ((B, A) => Validation[E, C])*
   )(
     implicit E: Semigroup[E], M: Applicative[M]
-  ): Formlet[M, I, E, C, V] = Formlet { c =>
+  ): Formlet[M, I, V, E, C] = Formlet { c =>
     val b = other(c)
     val h1 = h(b, _: A)
     val t1 = t.map(f => f(b, _: A))
     validate(h1, t1: _*).run(c)
   }
 
-  def lift[L[_] : Applicative]: Formlet[Lambda[a => L[M[a]]], I, E, A, V] =
-    Formlet[Lambda[a => L[M[a]]], I, E, A, V](c => Applicative[L].point(run(c)))
+  def lift[L[_] : Applicative]: Formlet[Lambda[a => L[M[a]]], I, V, E, A] =
+    Formlet[Lambda[a => L[M[a]]], I, V, E, A](c => Applicative[L].point(run(c)))
 
   def liftId[L[_] : Applicative](
-    implicit ev: this.type <~< Formlet[Id, I, E, A, V]
-  ): Formlet[L, I, E, A, V] =
-    Formlet[L, I, E, A, V](c => Applicative[L].point(ev(this).run(c)))
+    implicit ev: this.type <~< Formlet[Id, I, V, E, A]
+  ): Formlet[L, I, V, E, A] =
+    Formlet[L, I, V, E, A](c => Applicative[L].point(ev(this).run(c)))
 
-  def local[X](f: X => I): Formlet[M, X, E, A, V] = Formlet(run compose f)
+  def local[X](f: X => I): Formlet[M, X, V, E, A] = Formlet(run compose f)
 
-  def contramap[X](f: X => I): Formlet[M, X, E, A, V] = local(f)
+  def contramap[X](f: X => I): Formlet[M, X, V, E, A] = local(f)
 }
 
 object Formlet {
-  implicit def formletContravariant[M[_], E, A, V]: Contravariant[Formlet[M, ?, E, A, V]] =
-    new Contravariant[Formlet[M, ?, E, A, V]] {
-      def contramap[X, XX](fa: Formlet[M, X, E, A, V])(f: XX => X): Formlet[M, XX, E, A, V] =
+  implicit def formletContravariant[M[_], V, E, A]: Contravariant[Formlet[M, ?, V, E, A]] =
+    new Contravariant[Formlet[M, ?, V, E, A]] {
+      def contramap[X, XX](fa: Formlet[M, X, V, E, A])(f: XX => X): Formlet[M, XX, V, E, A] =
         fa contramap f
     }
 
-  implicit def formletBifunctor[M[_] : Functor, I, V ]: Bifunctor[Formlet[M, I, ?, ?, V]] =
-    new Bifunctor[Formlet[M, I, ?, ?, V]] {
-      def bimap[A, B, C, D](fab: Formlet[M, I, A, B, V])(f: A => C, g: B => D): Formlet[M, I, C, D, V] =
+  implicit def formletBifunctor[M[_] : Functor, I, V]: Bifunctor[Formlet[M, I, V, ?, ?]] =
+    new Bifunctor[Formlet[M, I, V, ?, ?]] {
+      def bimap[A, B, C, D](fab: Formlet[M, I, V, A, B])(f: A => C, g: B => D): Formlet[M, I, V, C, D] =
         fab.bimap(f, g)
     }
 
@@ -182,19 +182,19 @@ object Formlet {
     I,
     E : Semigroup,
     V : Monoid
-  ]: Applicative[Formlet[M, I, E, ?, V]] =
-    new Applicative[Formlet[M, I, E, ?, V]] {
-      override def map[A, B](a: Formlet[M, I, E, A, V])(f: A => B): Formlet[M, I, E, B, V] =
+  ]: Applicative[Formlet[M, I, V, E, ?]] =
+    new Applicative[Formlet[M, I, V, E, ?]] {
+      override def map[A, B](a: Formlet[M, I, V, E, A])(f: A => B): Formlet[M, I, V, E, B] =
         a map f
 
-      override def point[A](a: => A): Formlet[M, I, E, A, V] =
-        Formlet[M, I, E, A, V](_ => Applicative[M].point((a.success, Monoid[V].zero)))
+      override def point[A](a: => A): Formlet[M, I, V, E, A] =
+        Formlet[M, I, V, E, A](_ => Applicative[M].point((a.success, Monoid[V].zero)))
 
       override def ap[A, B](
-        fa: => Formlet[M, I, E, A, V]
+        fa: => Formlet[M, I, V, E, A]
       )(
-        f: => Formlet[M, I, E, A => B, V]
-      ): Formlet[M, I, E, B, V] =
+        f: => Formlet[M, I, V, E, A => B]
+      ): Formlet[M, I, V, E, B] =
         fa ap f
     }
 }

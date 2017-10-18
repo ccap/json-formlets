@@ -2,7 +2,7 @@ name := "json-formlets"
 
 organization := "gov.wicourts"
 
-version := "0.4.3"
+version := "0.5.0"
 
 scalaVersion := "2.12.2"
 crossScalaVersions := Seq("2.11.8", "2.12.2")

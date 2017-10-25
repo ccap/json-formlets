@@ -2,17 +2,17 @@ name := "json-formlets"
 
 organization := "gov.wicourts"
 
-version := "0.5.0"
+version := "0.5.1"
 
-scalaVersion := "2.12.2"
-crossScalaVersions := Seq("2.11.8", "2.12.2")
+scalaVersion := "2.12.4"
+crossScalaVersions := Seq("2.11.8", "2.12.4")
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
 libraryDependencies ++= Seq(
-  "org.scalaz" %% "scalaz-core" % "7.2.7" % "compile",
-  "io.argonaut" %% "argonaut" % "6.2-RC2",
-  "io.argonaut" %% "argonaut-scalaz" % "6.2-RC2"
+  "org.scalaz" %% "scalaz-core" % "7.2.16" % "compile",
+  "io.argonaut" %% "argonaut" % "6.2",
+  "io.argonaut" %% "argonaut-scalaz" % "6.2"
 )
 
 libraryDependencies ++= Seq(
@@ -67,7 +67,7 @@ scalacOptions ++= Seq(
       "-Ywarn-extra-implicit",
       "-Ywarn-unused:implicits",
       "-Ywarn-unused:imports",
-      //"-Ywarn-unused:locals", // gives an incorrect warning in Forms.scala
+//      "-Ywarn-unused:locals", // gives an incorrect warning in Forms.scala
       "-Ywarn-unused:params",
       "-Ywarn-unused:patvars",
       "-Ywarn-unused:privates"

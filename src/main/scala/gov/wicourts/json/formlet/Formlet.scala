@@ -122,6 +122,15 @@ case class Formlet[M[_], I, V, E, A](run: I => M[(Validation[E, A], V)]) {
   def valueOpt[B](implicit M: Functor[M], ev: A <~< Option[B]): I => M[Option[B]] = i =>
     M.map(this.eval(i))(v => Monad[Option].join(v.toOption.map(ev(_))))
 
+  def valueK(implicit M: Functor[M]): Kleisli[M, I, Option[A]] =
+    Kleisli(value)
+
+  def valueOptK[B](implicit M: Functor[M], ev: A <~< Option[B]): Kleisli[M, I, Option[B]] =
+    Kleisli(valueOpt)
+
+  def kleisli: Kleisli[M, I, (Validation[E, A], V)] =
+    Kleisli(run)
+
   def validateVM[B, C](
     other: I => M[B]
   )(
@@ -200,4 +209,7 @@ object Formlet {
 
   def ask[M[_] : Applicative, I, V : Monoid, E]: Formlet[M, I, V, E, I] =
     Formlet(i => Applicative[M].point((i.success, Monoid[V].zero)))
+
+  def kleisli[M[_], I, V, E, A](a: Kleisli[M, I, (Validation[E, A], V)]): Formlet[M, I, V, E, A] =
+    Formlet(a.run)
 }

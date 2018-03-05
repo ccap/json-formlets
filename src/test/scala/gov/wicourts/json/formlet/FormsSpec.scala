@@ -6,7 +6,9 @@ import scalaz.{Bind, NonEmptyList, Success}
 import scalaz.Id.Id
 
 import scalaz.std.option._
+import scalaz.std.string._
 import scalaz.syntax.applicative._
+import scalaz.syntax.equal._
 import scalaz.syntax.std.option._
 import scalaz.syntax.validation._
 
@@ -298,6 +300,27 @@ class FormsSpec extends Specification {
           else
             s.success
         }
+        val both = ^(nameF.obj, nameL.obj)((_, _))
+
+        checkResults(both)
+      }
+
+      "without using validateVM" >> {
+        val nameF = string("nameF", None)
+        val nameL = Formlet(
+          (for {
+            firstName <- nameF.valueOptK
+            result <- string("nameL", None)
+              .validate(s =>
+                if (s.exists(_ ≟ "Sprat") && ! firstName.exists(_ ≟ "Jack"))
+                  "If your last name is Sprat, your first name must be Jack"
+                    .failureNel
+                else
+                  s.success
+              ).kleisli
+          } yield result).run
+        )
+
         val both = ^(nameF.obj, nameL.obj)((_, _))
 
         checkResults(both)

@@ -2,7 +2,7 @@ name := "json-formlets"
 
 organization := "gov.wicourts"
 
-version := "0.5.1"
+version := "0.5.2-SNAPSHOT"
 
 scalaVersion := "2.12.4"
 crossScalaVersions := Seq("2.11.8", "2.12.4")
@@ -10,7 +10,7 @@ crossScalaVersions := Seq("2.11.8", "2.12.4")
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
 libraryDependencies ++= Seq(
-  "org.scalaz" %% "scalaz-core" % "7.2.16" % "compile",
+  "org.scalaz" %% "scalaz-core" % "7.2.20" % "compile",
   "io.argonaut" %% "argonaut" % "6.2",
   "io.argonaut" %% "argonaut-scalaz" % "6.2"
 )
@@ -30,6 +30,7 @@ scalacOptions ++= Seq(
   "-encoding", "UTF-8",       // yes, this is 2 args
   "-feature",
   "-unchecked",
+  "-Ypartial-unification",
   "-Xfatal-warnings",
   "-Xfuture",
   "-Xlint:adapted-args",

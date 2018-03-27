@@ -8,7 +8,7 @@ import scalaz.NonEmptyList.nel
 
 import scalaz.std.function._
 import scalaz.std.option._
-import scalaz.syntax.applicative._
+import scalaz.syntax.monad._
 import scalaz.syntax.monoid._
 import scalaz.syntax.validation._
 
@@ -171,6 +171,20 @@ case class Formlet[M[_], I, V, E, A](run: I => M[(Validation[E, A], V)]) {
   def local[X](f: X => I): Formlet[M, X, V, E, A] = Formlet(run compose f)
 
   def contramap[X](f: X => I): Formlet[M, X, V, E, A] = local(f)
+
+  def orElse(
+    x: => Formlet[M, I, V, E, A]
+  )(
+    implicit M: Monad[M]
+  ): Formlet[M, I, V, E, A] =
+    Formlet(i =>
+      this.run(i).flatMap { case (result, view) =>
+        result.fold(
+          _ => x.run(i),
+          j => M.point((j.success[E], view))
+        )
+      }
+    )
 }
 
 object Formlet {

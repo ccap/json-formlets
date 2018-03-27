@@ -106,6 +106,15 @@ class FormsSpec extends Specification {
       val results = r.obj.eval(None)
       results.leftMap(_.toJson.nospaces) must_== """{"nameLOther":["Nope"]}""".failure
     }
+
+    "can fail to an alternative" >> {
+      val failing = string("nameL", None)
+        .mapValidation(_ => "No way!".failureNel[Option[String]])
+      val good = string("nameL", None)
+        .mapValidation(_ => "Success!".some.successNel[String])
+      val results = (failing orElse good).obj.eval(None)
+      results must_== "Success!".some.success
+    }
   }
 
   "A number form" >> {

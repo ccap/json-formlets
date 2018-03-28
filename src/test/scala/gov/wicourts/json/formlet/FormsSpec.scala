@@ -147,6 +147,32 @@ class FormsSpec extends Specification {
 
       result must_== None.success
     }
+
+    "can be used to determine which of two forms are evaluated where the" >> {
+      "first form is evaluated if the condition form is true" >> {
+        val cond = boolean("condition", None)
+          .mapValidation(_ => true.successNel[String])
+        val first = string("nameL", None)
+          .mapValidation(_ => "First".successNel[String])
+        val second = string("nameL", None)
+          .mapValidation(_ => "Second".failureNel[String])
+        val results = Formlet.ifM(cond, first, second).obj.eval(None)
+
+        results must_== "First".success
+      }
+
+      "second form is evaluated if the condition form is false" >> {
+        val cond = boolean("condition", None)
+          .mapValidation(_ => false.successNel[String])
+        val first = string("nameL", None)
+          .mapValidation(_ => "First".failureNel[String])
+        val second = string("nameL", None)
+          .mapValidation(_ => "Second".successNel[String])
+        val results = Formlet.ifM(cond, first, second).obj.eval(None)
+
+        results must_== "Second".success
+      }
+    }
   }
 
   "A JSON form" >> {

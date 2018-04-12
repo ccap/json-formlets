@@ -226,4 +226,18 @@ object Formlet {
 
   def kleisli[M[_], I, V, E, A](a: Kleisli[M, I, (Validation[E, A], V)]): Formlet[M, I, V, E, A] =
     Formlet(a.run)
+
+  def ifM[M[_], I, V, E, A](
+    cond: Formlet[M, I, V, E, Boolean],
+    first: Formlet[M, I, V, E, A],
+    second: Formlet[M, I, V, E, A]
+  )(implicit M: Monad[M]): Formlet[M, I, V, E, A] =
+    Formlet(i =>
+      cond.run(i).flatMap { case (result, view) =>
+        result.fold(
+          e => M.point((e.failure[A], view)),
+          s => if (s) first.run(i) else second.run(i)
+        )
+      }
+    )
 }

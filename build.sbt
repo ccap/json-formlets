@@ -4,8 +4,8 @@ organization := "gov.wicourts"
 
 version := "0.5.4-SNAPSHOT"
 
-scalaVersion := "2.12.4"
-crossScalaVersions := Seq("2.11.8", "2.12.4")
+scalaVersion := "2.12.6"
+crossScalaVersions := Seq("2.11.12", "2.12.6")
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 

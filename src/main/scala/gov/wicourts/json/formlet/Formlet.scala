@@ -240,4 +240,7 @@ object Formlet {
         )
       }
     )
+
+  def point[M[_] : Applicative, I, V : Monoid, E, A](a: => A): Formlet[M, I, V, E, A] =
+    Formlet(_ => Applicative[M].point((a.success[E], Monoid[V].zero)))
 }

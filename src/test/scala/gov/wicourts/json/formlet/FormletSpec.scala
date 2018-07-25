@@ -6,8 +6,10 @@ import org.specs2.mutable.Specification
 import scalaz.{Equal, Apply, Applicative, Bifunctor, Contravariant}
 import scalaz.Id.Id
 import scalaz.scalacheck.ScalazProperties._
+import scalaz.std.anyVal._
 import scalaz.std.string._
 import scalaz.syntax.monad._
+import scalaz.syntax.monoid._
 import scalaz.syntax.validation._
 
 import org.scalacheck.{Gen, Arbitrary}
@@ -92,6 +94,20 @@ class FormletSpec extends Specification with ScalaCheck {
           sampleEqual
         )
       }
+    }
+
+    "Constructors" >> {
+
+      "point" >> {
+        "value must be equal" >> prop((a: Int) =>
+          Formlet.point[Id, Int, String, Int, Int](a).run(99)._1 === a.success[Int]
+        )
+
+        "view must be empty" >> prop((a: Int) =>
+          Formlet.point[Id, Int, String, Int, Int](a).run(99)._2 === mzero[String]
+        )
+      }
+
     }
   }
 }

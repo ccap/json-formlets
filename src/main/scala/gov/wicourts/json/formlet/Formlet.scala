@@ -82,6 +82,23 @@ case class Formlet[M[_], I, V, E, A](run: I => M[(Validation[E, A], V)]) {
     mapValidation(f).map(_.head)
   }
 
+  /**
+    * This has the same signature has .flatMap, but is named differently as
+    * Formlet is not a Monad.
+    */
+  def using[B](
+    f: A => Formlet[M, I, V, E, B]
+  )(
+    implicit M: Monad[M], V: Semigroup[V]
+  ): Formlet[M, I, V, E, B] =
+    Formlet(i => M.bind(run(i)) {
+      case (ff@Failure(_), v1) => M.point((ff, v1))
+      case (Success(a), v1) =>
+        M.map(f(a).run(i)) { case (r2, v2) =>
+          (r2, V.append(v1, v2))
+        }
+    })
+
   def mapResultM[EE, AA, W](
     f: (Validation[E, A], V) => M[(Validation[EE, AA], W)]
   )(

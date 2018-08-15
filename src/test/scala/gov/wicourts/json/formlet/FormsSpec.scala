@@ -2,7 +2,7 @@ package gov.wicourts.json.formlet
 
 import org.specs2.mutable.Specification
 
-import scalaz.{Bind, NonEmptyList, Success}
+import scalaz.{Applicative, Bind, NonEmptyList, Success}
 import scalaz.Id.Id
 
 import scalaz.std.option._
@@ -114,6 +114,25 @@ class FormsSpec extends Specification {
         .mapValidation(_ => "Success!".some.successNel[String])
       val results = (failing orElse good).obj.eval(None)
       results must_== "Success!".some.success
+    }
+
+    "using .flatMap (with another name)" >> {
+      "sums its views on success" >> {
+        val first = string("nameF", "John".some).obj
+        val second = string("nameL", "Smith".some).obj
+        val result = first.using(_ => second).view(None)
+        result.toJson.nospaces must_== """{"nameF":{"value":"John"},"nameL":{"value":"Smith"}}"""
+      }
+
+      "works (!)" >> {
+        val nameL = string("nameL", None).obj
+
+        val result = nameL.using(n => Applicative[IdObjectFormlet].point(n)).eval(
+          parse("""{"nameL":" Smith  "}""")
+        )
+
+        result must_== "Smith".some.success
+      }
     }
   }
 

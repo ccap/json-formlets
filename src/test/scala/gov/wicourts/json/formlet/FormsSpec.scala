@@ -279,6 +279,14 @@ class FormsSpec extends Specification {
       string("nameL", fullName.nameL).obj
     )(FullName.apply _)
 
+  case class RequiredLastFullName(nameF: Option[String], nameL: String)
+
+  def requiredLastFullName(fullName: RequiredLastFullName): IdObjectFormlet[RequiredLastFullName] =
+    ^(
+      string("nameF", fullName.nameF).obj,
+      string("nameL", fullName.nameL.some).required.obj
+    )(RequiredLastFullName.apply _)
+
   "A composite form example" >> {
 
     "should be able to render initial data" >> {
@@ -419,6 +427,33 @@ class FormsSpec extends Specification {
 
         val expected = """{"fullName":{"nameL":["Field nameL must be a(n) string"]}}"""
         result.leftMap(_.toJson.nospaces) must_== expected.failure
+      }
+    }
+
+    "can be nested (optionally)" >> {
+      "and should be able to return None if property doesn't exist" >> {
+        val fullName = RequiredLastFullName(None, "")
+        val json = """{"other": "one"}"""
+        val result = nestedOptional("fullName", requiredLastFullName(fullName)).eval(parse(json))
+
+        result must_== None.success
+      }
+
+      "and should fail validation if property exists, but is wrong/incomplete" >> {
+        val fullName = RequiredLastFullName(None, "")
+        val json = """{"fullName": {}}"""
+        val result = nestedOptional("fullName", requiredLastFullName(fullName)).eval(parse(json))
+
+        val expected = """{"fullName":{"nameL":["This field is required"]}}"""
+        result.leftMap(_.toJson.nospaces) must_== expected.failure
+      }
+
+      "and should be able to extract data" >> {
+        val fullName = RequiredLastFullName(None, "")
+        val json = """{"fullName":{"nameL":"Sprat","nameF":"Jack"}}"""
+        val result = nestedOptional("fullName", requiredLastFullName(fullName)).eval(parse(json))
+
+        result must_== RequiredLastFullName("Jack".some, "Sprat").some.success
       }
     }
   }

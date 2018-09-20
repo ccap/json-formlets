@@ -66,6 +66,19 @@ object Forms {
       JsonObjectBuilder.row(name, v.toJson)
     ))
 
+  def nestedOptionalM[M[_], A, V <: JsonBuilder](
+    name: String,
+    inner: JsonFormlet[M, V, ValidationErrors, A]
+  )(
+    implicit M: Applicative[M]
+  ): ObjectFormlet[M, Option[A]] =
+    Formlet(c =>
+      (if (c.flatMap(_.downField(name)).isDefined)
+        nestedM(name, inner).map(_.some)
+      else
+        Applicative[ObjectFormlet[M, ?]].point(none[A])).run(c)
+    )
+
   // This was removed from Argonaut in v6.2 as part of moving the Scalaz
   // integration to a separate library.
   private def traverseBreak[X](c: Cursor, r: Kleisli[State[X, ?], Cursor, Option[Cursor]]): Endo[X] =
@@ -330,5 +343,11 @@ object Forms {
       inner: JsonFormlet[Id, V, ValidationErrors, A]
     ): IdObjectFormlet[A] =
       nestedM[Id, A, V](name, inner)
+
+    def nestedOptional[A, V <: JsonBuilder](
+      name: String,
+      inner: JsonFormlet[Id, V, ValidationErrors, A]
+    ): IdObjectFormlet[Option[A]] =
+      nestedOptionalM[Id, A, V](name, inner)
   }
 }

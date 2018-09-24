@@ -3,6 +3,8 @@ package gov.wicourts.json.formlet
 import argonaut._
 import argonaut.Argonaut._
 
+import org.slf4j.LoggerFactory
+
 import scalaz._
 import scalaz.OptionT.optionT
 import scalaz.std.list._
@@ -23,6 +25,10 @@ import scala.language.higherKinds
 import Predef.identity
 
 object Forms {
+  private val logger = LoggerFactory.getLogger(loggerName)
+
+  private def loggerName: String = getClass.getName.substring(0, getClass.getName.length-1)
+
   private def primitive[M[_]: Applicative, A](
     descr: String,
     toJson: A => Json,
@@ -46,16 +52,40 @@ object Forms {
         ) >>= (fromJson)
       ).run.validation
 
+      if (logger.isDebugEnabled) {
+        logger.debug(s"Attempting to parse a $descr named $name")
+      }
+
+      if (logger.isTraceEnabled) {
+        logger.trace(s"Input JSON is ${cursorToString(c)}")
+        logger.trace(s"Field JSON is ${cursorToString(c.flatMap(_.downField(name)))}")
+      }
+
       val view = FieldView(name, (result.toOption.join orElse value).map(toJson), None, name)
 
       (result, view).point[M]
     }
 
+  private def cursorToString(c: Option[Cursor]): String = c.map(_.focus.nospaces).toString
+
   private def namedContext[M[_], E, A, V](
     name: String,
     inner: JsonFormlet[M, E, A, V]
   ): JsonFormlet[M, E, A, V] =
-    inner.contramap(_.flatMap(_.downField(name)))
+    inner.contramap { c =>
+      val result = c.flatMap(_.downField(name))
+
+      if (logger.isDebugEnabled) {
+        logger.debug(s"Moving parse location into property $name")
+      }
+
+      if (logger.isTraceEnabled) {
+        logger.trace(s"Before JSON is ${cursorToString(c)}")
+        logger.trace(s"After JSON is ${cursorToString(result)}")
+      }
+
+      result
+    }
 
   def nestedM[M[_] : Functor, A, V <: JsonBuilder](
     name: String,
@@ -281,7 +311,33 @@ object Forms {
     ))
 
   def fromRoot[M[_], E, A, V](formlet: JsonFormlet[M, E, A, V]): JsonFormlet[M, E, A, V] =
-    formlet.contramap(_.map(_.undo.cursor))
+    fromLocation("root", _.undo.cursor.some, formlet)
+
+  def fromParent[M[_], E, A, V](formlet: JsonFormlet[M, E, A, V]): JsonFormlet[M, E, A, V] =
+    fromLocation("parent", _.up, formlet)
+
+  def resetRoot[M[_], E, A, V](formlet: JsonFormlet[M, E, A, V]): JsonFormlet[M, E, A, V] =
+    fromLocation("new root", _.focus.cursor.some, formlet)
+
+  private def fromLocation[M[_], E, A, V](
+    descr: String,
+    f: Cursor => Option[Cursor],
+    formlet: JsonFormlet[M, E, A, V]
+  ): JsonFormlet[M, E, A, V] =
+    formlet.contramap { c =>
+      val result = c.flatMap(f)
+
+      if (logger.isDebugEnabled) {
+        logger.debug(s"Returning to $descr")
+      }
+
+      if (logger.isTraceEnabled) {
+        logger.trace(s"Before returning to $descr JSON is ${cursorToString(c)}")
+        logger.trace(s"After returning to $descr JSON is ${cursorToString(result)}")
+      }
+
+      result
+    }
 
   object Id {
     def listOfString(

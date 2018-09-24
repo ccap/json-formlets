@@ -12,6 +12,8 @@ class ObjectFormletOps[M[_], A](self: ObjectFormlet[M, A])(implicit M: Functor[M
     Forms.requiredObj(name, self.map(a => a: Option[B]))
 
   def fromRoot: ObjectFormlet[M, A] = Forms.fromRoot(self)
+  def fromParent: ObjectFormlet[M, A] = Forms.fromParent(self)
+  def resetRoot: ObjectFormlet[M, A] = Forms.resetRoot(self)
 }
 
 class FieldFormletOps[M[_], A](self: FieldFormlet[M, A])(implicit M: Functor[M]) {
@@ -23,6 +25,8 @@ class FieldFormletOps[M[_], A](self: FieldFormlet[M, A])(implicit M: Functor[M])
     Forms.required(self.map(a => a: Option[B]))
 
   def fromRoot: FieldFormlet[M, A] = Forms.fromRoot(self)
+  def fromParent: FieldFormlet[M, A] = Forms.fromParent(self)
+  def resetRoot: FieldFormlet[M, A] = Forms.resetRoot(self)
 }
 
 class IdFieldFormletOps[A](self: IdFieldFormlet[A]) {
@@ -34,6 +38,8 @@ class IdFieldFormletOps[A](self: IdFieldFormlet[A]) {
     Forms.required(self.map(a => a: Option[B]))
 
   def fromRoot: IdFieldFormlet[A] = Forms.fromRoot(self)
+  def fromParent: IdFieldFormlet[A] = Forms.fromParent(self)
+  def resetRoot: IdFieldFormlet[A] = Forms.resetRoot(self)
 }
 
 trait ToFieldFormletOps0 {

@@ -13,7 +13,7 @@ class ObjectFormletOps[M[_], A](self: ObjectFormlet[M, A])(implicit M: Functor[M
 
   def fromRoot: ObjectFormlet[M, A] = Forms.fromRoot(self)
   def fromParent: ObjectFormlet[M, A] = Forms.fromParent(self)
-  def resetRoot: ObjectFormlet[M, A] = Forms.resetRoot(self)
+  def setRoot: ObjectFormlet[M, A] = Forms.setRoot(self)
 }
 
 class FieldFormletOps[M[_], A](self: FieldFormlet[M, A])(implicit M: Functor[M]) {
@@ -26,7 +26,7 @@ class FieldFormletOps[M[_], A](self: FieldFormlet[M, A])(implicit M: Functor[M])
 
   def fromRoot: FieldFormlet[M, A] = Forms.fromRoot(self)
   def fromParent: FieldFormlet[M, A] = Forms.fromParent(self)
-  def resetRoot: FieldFormlet[M, A] = Forms.resetRoot(self)
+  def setRoot: FieldFormlet[M, A] = Forms.setRoot(self)
 }
 
 class IdFieldFormletOps[A](self: IdFieldFormlet[A]) {
@@ -39,7 +39,7 @@ class IdFieldFormletOps[A](self: IdFieldFormlet[A]) {
 
   def fromRoot: IdFieldFormlet[A] = Forms.fromRoot(self)
   def fromParent: IdFieldFormlet[A] = Forms.fromParent(self)
-  def resetRoot: IdFieldFormlet[A] = Forms.resetRoot(self)
+  def setRoot: IdFieldFormlet[A] = Forms.setRoot(self)
 }
 
 trait ToFieldFormletOps0 {

@@ -316,7 +316,7 @@ object Forms {
   def fromParent[M[_], E, A, V](formlet: JsonFormlet[M, E, A, V]): JsonFormlet[M, E, A, V] =
     fromLocation("parent", _.up, formlet)
 
-  def resetRoot[M[_], E, A, V](formlet: JsonFormlet[M, E, A, V]): JsonFormlet[M, E, A, V] =
+  def setRoot[M[_], E, A, V](formlet: JsonFormlet[M, E, A, V]): JsonFormlet[M, E, A, V] =
     fromLocation("new root", _.focus.cursor.some, formlet)
 
   private def fromLocation[M[_], E, A, V](

@@ -20,9 +20,13 @@ object ObjectFormlet {
   ): ObjectFormlet[G, A] =
     apply(cursor => transform(f.run(cursor)))
 
-  def validationM[M[_]: Applicative, A](
+  def liftM[M[_]: Applicative, A](
     m: M[Validation[ValidationErrors, A]]
   ): ObjectFormlet[M, A] =
-    Formlet.validationM(m)
+    Formlet.liftM(m)
 
+  def point[M[_]: Applicative, A](
+    a: A
+  ): ObjectFormlet[M, A] =
+    Formlet.point(a)
 }

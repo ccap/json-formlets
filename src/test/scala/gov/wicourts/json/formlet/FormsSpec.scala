@@ -6,9 +6,7 @@ import scalaz.{Applicative, Bind, NonEmptyList, Success}
 import scalaz.Id.Id
 
 import scalaz.std.option._
-import scalaz.std.string._
 import scalaz.syntax.applicative._
-import scalaz.syntax.equal._
 import scalaz.syntax.std.option._
 import scalaz.syntax.validation._
 
@@ -87,18 +85,6 @@ class FormsSpec extends Specification {
       a must_== NonEmptyList("This field is required").failure
     }
 
-    "can be lifted" >> {
-      val r = string("nameL", "Smith".some).lift[Option].eval(None)
-
-      r must_== Some(None.success)
-    }
-
-    "can be lifted (id)" >> {
-      val r = string("nameL", "Smith".some).liftId[Option].eval(None)
-
-      r must_== Some(None.success)
-    }
-
     "can associate an error with another field" >> {
       val r = string("nameL", None)
         .mapValidation(o => "Nope".failureNel[String])
@@ -141,12 +127,13 @@ class FormsSpec extends Specification {
       val f = number("count", None)
         .required
         .validate(
-          _.success.ensure(NonEmptyList("count must be bigger than 7"))(_.truncateToInt > 7),
-          _.success.ensure(NonEmptyList("count must be less than 5"))(_.truncateToInt < 5)
+          _.success
+            .ensure(NonEmptyList("count must be bigger than 7"))(_.truncateToInt > 7)
+            .ensure(NonEmptyList("count must be less than 5"))(_.truncateToInt < 5)
         )
       val result = f.eval(parse("""{"count":6}"""))
 
-      result must_== NonEmptyList("count must be bigger than 7", "count must be less than 5").failure
+      result must_== NonEmptyList("count must be bigger than 7").failure
     }
 
     "treats an empty string as empty" >> {
@@ -366,41 +353,6 @@ class FormsSpec extends Specification {
 
         checkResults(both)
       }
-
-      "without using validateVM" >> {
-        val nameF = string("nameF", None)
-        val nameL = Formlet(
-          (for {
-            firstName <- nameF.valueOptK
-            result <- string("nameL", None)
-              .validate(s =>
-                if (s.exists(_ ≟ "Sprat") && ! firstName.exists(_ ≟ "Jack"))
-                  "If your last name is Sprat, your first name must be Jack"
-                    .failureNel
-                else
-                  s.success
-              ).kleisli
-          } yield result).run
-        )
-
-        val both = ^(nameF.obj, nameL.obj)((_, _))
-
-        checkResults(both)
-      }
-
-      "in id" >> {
-        val nameF = string("nameF", None)
-        val nameL = string("nameL", None).validateV(nameF.value) { (other, s) =>
-          if (s.exists(_ == "Sprat") && ! Bind[Option].join(other).exists(_ == "Jack"))
-            "If your last name is Sprat, your first name must be Jack"
-              .failureNel
-          else
-            s.success
-        }
-        val both = ^(nameF.obj, nameL.obj)((_, _))
-
-        checkResults(both)
-      }
     }
 
     "can be nested" >> {
@@ -525,7 +477,7 @@ class FormsSpec extends Specification {
               "nested",
               string("otherName", None)
                 .required
-                .validateV(name.value)((root, other) =>
+                .validateVM(name.value)((root, other) =>
                   if (root.exists(_ == other))
                     other.success
                   else

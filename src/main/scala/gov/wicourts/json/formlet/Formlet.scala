@@ -2,11 +2,7 @@ package gov.wicourts.json.formlet
 
 import scalaz._
 import scalaz.Liskov._
-import scalaz.Id.Id
 
-import scalaz.NonEmptyList.nel
-
-import scalaz.std.function._
 import scalaz.std.option._
 import scalaz.syntax.monad._
 import scalaz.syntax.monoid._
@@ -30,17 +26,17 @@ case class Formlet[M[_], I, V, E, A](run: I => M[(Validation[E, A], V)]) {
     bimap(f, identity)
 
   def map[B](f: A => B)(implicit M: Functor[M]): Formlet[M, I, V, E, B] =
-    mapResult((result, view) => (result map f, view))
+    bimap(identity, f)
 
   def mapK[G[_], VV, EE, AA](
     f: M[(Validation[E, A], V)] => G[(Validation[EE, AA], VV)]
-  ): Formlet[G, I, VV, EE, AA] = Formlet(c =>
-    f(run(c))
-  )
+  ): Formlet[G, I, VV, EE, AA] =
+    Formlet(c => f(run(c)))
 
   def mapK_[G[_], B](
     f: M[(Validation[E, A], V)] => G[(Validation[E, B], V)]
-  ): Formlet[G, I, V, E, B] = mapK(f)
+  ): Formlet[G, I, V, E, B] =
+    mapK(f)
 
   def ap[B](
     f: => Formlet[M, I, V, E, A => B]
@@ -67,20 +63,15 @@ case class Formlet[M[_], I, V, E, A](run: I => M[(Validation[E, A], V)]) {
     f: A => Validation[E, B]
   )(
     implicit M: Functor[M]
-  ): Formlet[M, I, V, E, B] = {
+  ): Formlet[M, I, V, E, B] =
     mapResult((a, v) => ((a.disjunction.flatMap(f(_).disjunction)).validation, v))
-  }
 
   def validate[B](
-    h: A => Validation[E, B],
-    t: (A => Validation[E, B])*
+    f: A => Validation[E, B]
   )(
-    implicit E: Semigroup[E], M: Applicative[M]
-  ): Formlet[M, I, V, E, B] = {
-    val X = Applicative[A => ?].compose[Validation[E, ?]]
-    val f = X.sequence(nel(h, IList(t: _*)))
-    mapValidation(f).map(_.head)
-  }
+    implicit M: Functor[M]
+  ): Formlet[M, I, V, E, B] =
+    mapValidation(f)
 
   /**
     * This has the same signature has .flatMap, but is named differently as
@@ -123,15 +114,11 @@ case class Formlet[M[_], I, V, E, A](run: I => M[(Validation[E, A], V)]) {
   }
 
   def validateM[B](
-    h: A => M[Validation[E, B]],
-    t: (A => M[Validation[E, B]])*
+    f: A => M[Validation[E, B]]
   )(
-    implicit E: Semigroup[E], M: Monad[M]
-  ): Formlet[M, I, V, E, B] = {
-    val X = Applicative[A => ?].compose[M].compose[Validation[E, ?]]
-    val f = X.sequence(nel(h, IList(t: _*)))
-    mapValidationM(f).map(_.head)
-  }
+    implicit M: Monad[M]
+  ): Formlet[M, I, V, E, B] =
+    mapValidationM(f)
 
   def value(implicit M: Functor[M]): I => M[Option[A]] = i =>
     M.map(this.eval(i))(_.toOption)
@@ -139,51 +126,16 @@ case class Formlet[M[_], I, V, E, A](run: I => M[(Validation[E, A], V)]) {
   def valueOpt[B](implicit M: Functor[M], ev: A <~< Option[B]): I => M[Option[B]] = i =>
     M.map(this.eval(i))(v => Monad[Option].join(v.toOption.map(ev(_))))
 
-  def valueK(implicit M: Functor[M]): Kleisli[M, I, Option[A]] =
-    Kleisli(value)
-
-  def valueOptK[B](implicit M: Functor[M], ev: A <~< Option[B]): Kleisli[M, I, Option[B]] =
-    Kleisli(valueOpt)
-
-  def kleisli: Kleisli[M, I, (Validation[E, A], V)] =
-    Kleisli(run)
-
   def validateVM[B, C](
     other: I => M[B]
   )(
-    h: (B, A) => M[Validation[E, C]],
-    t: ((B, A) => M[Validation[E, C]])*
+    f: (B, A) => M[Validation[E, C]]
   )(
-    implicit E: Semigroup[E], M: Monad[M]
-  ): Formlet[M, I, V, E, C] = Formlet { c =>
-    M.bind(other(c)) { b =>
-      val h1 = h(b, _: A)
-      val t1 = t.map(f => f(b, _: A))
-      validateM(h1, t1: _*).run(c)
-    }
-  }
-
-  def validateV[B, C](
-    other: I => B
-  )(
-    h: (B, A) => Validation[E, C],
-    t: ((B, A) => Validation[E, C])*
-  )(
-    implicit E: Semigroup[E], M: Applicative[M]
-  ): Formlet[M, I, V, E, C] = Formlet { c =>
-    val b = other(c)
-    val h1 = h(b, _: A)
-    val t1 = t.map(f => f(b, _: A))
-    validate(h1, t1: _*).run(c)
-  }
-
-  def lift[L[_] : Applicative]: Formlet[Lambda[a => L[M[a]]], I, V, E, A] =
-    Formlet[Lambda[a => L[M[a]]], I, V, E, A](c => Applicative[L].point(run(c)))
-
-  def liftId[L[_] : Applicative](
-    implicit ev: this.type <~< Formlet[Id, I, V, E, A]
-  ): Formlet[L, I, V, E, A] =
-    Formlet[L, I, V, E, A](c => Applicative[L].point(ev(this).run(c)))
+    implicit M: Monad[M]
+  ): Formlet[M, I, V, E, C] =
+    Formlet(c =>
+      M.bind(other(c))(b => validateM(f(b, _)).run(c))
+    )
 
   def local[X](f: X => I): Formlet[M, X, V, E, A] = Formlet(run compose f)
 
@@ -241,9 +193,6 @@ object Formlet {
   def ask[M[_] : Applicative, I, V : Monoid, E]: Formlet[M, I, V, E, I] =
     Formlet(i => Applicative[M].point((i.success, Monoid[V].zero)))
 
-  def kleisli[M[_], I, V, E, A](a: Kleisli[M, I, (Validation[E, A], V)]): Formlet[M, I, V, E, A] =
-    Formlet(a.run)
-
   def ifM[M[_], I, V, E, A](
     cond: Formlet[M, I, V, E, Boolean],
     first: Formlet[M, I, V, E, A],
@@ -261,7 +210,7 @@ object Formlet {
   def point[M[_] : Applicative, I, V : Monoid, E, A](a: => A): Formlet[M, I, V, E, A] =
     Formlet(_ => Applicative[M].point((a.success[E], Monoid[V].zero)))
 
-  def validationM[M[_]: Applicative, I, V: Monoid, E, A](
+  def liftM[M[_]: Applicative, I, V: Monoid, E, A](
     m: M[Validation[E, A]]
   ): Formlet[M, I, V, E, A] =
     Formlet(_ => m.map((_, Monoid[V].zero)))

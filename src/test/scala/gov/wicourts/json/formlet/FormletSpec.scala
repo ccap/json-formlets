@@ -3,7 +3,7 @@ package gov.wicourts.json.formlet
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
 
-import scalaz.{Equal, Apply, Applicative, Bifunctor, Contravariant}
+import scalaz.{Equal, Apply, Applicative, Bifunctor, Contravariant, Validation}
 import scalaz.Id.Id
 import scalaz.scalacheck.ScalazProperties._
 import scalaz.std.anyVal._
@@ -24,7 +24,7 @@ class FormletSpec extends Specification with ScalaCheck {
       )
 
       "Applicative" >> {
-        type SampleFormlet[A] = Formlet[Id, Int, String, String, A]
+        type SampleFormlet[A] = Formlet[Id, Validation, Int, String, String, A]
 
         def intFormlet[A](f: Int => A): Arbitrary[SampleFormlet[A]] = Arbitrary(
           Gen.frequency(
@@ -48,7 +48,7 @@ class FormletSpec extends Specification with ScalaCheck {
       }
 
       "Bifunctor" >> {
-        type SampleFormlet[A, B] = Formlet[Id, Int, String, A, B]
+        type SampleFormlet[A, B] = Formlet[Id, Validation, Int, String, A, B]
 
         def intFormlet[A, B](f: Int => Int): Arbitrary[SampleFormlet[Int, Int]] = Arbitrary(
           Gen.frequency(
@@ -72,7 +72,7 @@ class FormletSpec extends Specification with ScalaCheck {
       }
 
       "Contravariant" >> {
-        type SampleFormlet[A] = Formlet[Id, A, String, Int, Int]
+        type SampleFormlet[A] = Formlet[Id, Validation, A, String, Int, Int]
 
         val sampleFormlet: Arbitrary[SampleFormlet[Int]] = Arbitrary(
           Gen.frequency(
@@ -100,11 +100,11 @@ class FormletSpec extends Specification with ScalaCheck {
 
       "point" >> {
         "value must be equal" >> prop((a: Int) =>
-          Formlet.point[Id, Int, String, Int, Int](a).run(99)._1 === a.success[Int]
+          Formlet.point[Id, Validation, Int, String, Int, Int](a).run(99)._1 === a.success[Int]
         )
 
         "view must be empty" >> prop((a: Int) =>
-          Formlet.point[Id, Int, String, Int, Int](a).run(99)._2 === mzero[String]
+          Formlet.point[Id, Validation, Int, String, Int, Int](a).run(99)._2 === mzero[String]
         )
       }
 

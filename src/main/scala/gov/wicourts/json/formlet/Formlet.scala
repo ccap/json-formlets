@@ -73,6 +73,9 @@ case class Formlet[M[_], I, V, E, A](run: I => M[(Validation[E, A], V)]) {
   ): Formlet[M, I, V, E, B] =
     mapValidation(f)
 
+  def wizard(implicit M: Functor[M]): Wizard[M, I, V, E, A] =
+    Wizard(i => M.map(run(i)) { case (r, v) => (r.disjunction, v) })
+
   /**
     * This has the same signature has .flatMap, but is named differently as
     * Formlet is not a Monad.
@@ -82,13 +85,7 @@ case class Formlet[M[_], I, V, E, A](run: I => M[(Validation[E, A], V)]) {
   )(
     implicit M: Monad[M], V: Semigroup[V]
   ): Formlet[M, I, V, E, B] =
-    Formlet(i => M.bind(run(i)) {
-      case (ff@Failure(_), v1) => M.point((ff, v1))
-      case (Success(a), v1) =>
-        M.map(f(a).run(i)) { case (r2, v2) =>
-          (r2, V.append(v1, v2))
-        }
-    })
+    wizard.flatMap(f(_).wizard).formlet
 
   def mapResultM[EE, AA, W](
     f: (Validation[E, A], V) => M[(Validation[EE, AA], W)]

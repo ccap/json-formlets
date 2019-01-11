@@ -27,8 +27,8 @@ case class Formlet[M[_], N[_, _], I, V, E, A](run: I => M[(N[E, A], V)]) {
   def leftMap[B](f: E => B)(implicit M: Functor[M], N: Bifunctor[N]): Formlet[M, N, I, V, B, A] =
     bimap(f, identity)
 
-  def map[B](f: A => B)(implicit M: Functor[M], N: Bifunctor[N]): Formlet[M, N, I, V, E, B] =
-    bimap(identity, f)
+  def map[B](f: A => B)(implicit M: Functor[M], N: Functor[N[E, ?]]): Formlet[M, N, I, V, E, B] =
+    mapResult((result, view) => (result map f, view))
 
   def mapK[G[_], VV, EE, AA](
     f: M[(N[E, A], V)] => G[(N[EE, AA], VV)]
@@ -89,7 +89,7 @@ object Formlet {
     ): Formlet[M, Validation, I, V, E, B] =
       mapValidation(f)
 
-    def wizard(implicit M: Functor[M]): Formlet[M, \/, I, V, E, A] =
+    def step(implicit M: Functor[M]): Formlet[M, \/, I, V, E, A] =
       Formlet(i => M.map(self.run(i)) { case (r, v) => (r.disjunction, v) })
 
     /**
@@ -101,7 +101,7 @@ object Formlet {
     )(
       implicit M: Monad[M], V: Semigroup[V]
     ): Formlet[M, Validation, I, V, E, B] =
-      wizard.flatMap(f(_).wizard).formlet
+      step.flatMap(f(_).step).formlet
 
     def mapValidationM[B](
       f: A => M[Validation[E, B]]

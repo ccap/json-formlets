@@ -13,7 +13,6 @@ import scalaz.syntax.validation._
 import argonaut._
 
 import gov.wicourts.json.formlet.Forms.Id._
-import gov.wicourts.json.formlet.syntax._
 
 import Predef.ArrowAssoc
 

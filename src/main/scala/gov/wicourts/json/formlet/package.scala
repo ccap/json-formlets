@@ -14,6 +14,4 @@ package object formlet {
 
   type IdFieldFormlet[A] = FieldFormlet[Id, A]
   type IdObjectFormlet[A] = ObjectFormlet[Id, A]
-
-  object syntax extends ToFieldFormletOps with ToObjectFormletOps
 }

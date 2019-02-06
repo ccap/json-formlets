@@ -8,6 +8,7 @@ import scalaz.syntax.bifunctor._
 import scalaz.syntax.either._
 import scalaz.syntax.monad._
 import scalaz.syntax.monoid._
+import scalaz.syntax.traverse.{ToFunctorOps => _, _}
 import scalaz.syntax.validation._
 
 import scala.language.higherKinds
@@ -68,6 +69,13 @@ case class Formlet[M[_], N[_, _], I, V, E, A](run: I => M[(N[E, A], V)]) {
     implicit M: Bind[M]
   ): Formlet[M, N, I, W, EE, AA] =
     Formlet(c => M.bind(run(c))(f.tupled))
+
+  def mapM[B](
+    f: A => M[B]
+  )(
+    implicit M: Monad[M], N: Traverse[N[E, ?]]
+  ): Formlet[M, N, I, V, E, B] =
+    mapResultM { case (n, v) => n.traverse(f).map((_, v)) }
 
   def local[X](f: X => I): Formlet[M, N, X, V, E, A] = Formlet(run compose f)
 

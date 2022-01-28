@@ -2,26 +2,25 @@ name := "json-formlets"
 
 organization := "gov.wicourts"
 
-version := "0.8.1"
+version := "0.9.0"
 
-scalaVersion := "2.12.6"
-crossScalaVersions := Seq("2.11.12", "2.12.6")
-
-resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+scalaVersion := "2.12.11"
 
 libraryDependencies ++= Seq(
-  "org.scalaz" %% "scalaz-core" % "7.2.20" % "compile",
-  "io.argonaut" %% "argonaut" % "6.2",
-  "io.argonaut" %% "argonaut-scalaz" % "6.2",
+  "io.argonaut" %% "argonaut" % "6.2.5",
+  "io.argonaut" %% "argonaut-cats" % "6.2.5",
   "org.slf4j" % "slf4j-api" % "1.7.25",
+  "org.typelevel" %% "cats-core" % "2.7.0",
 )
 
 libraryDependencies ++= Seq(
-  "org.specs2" %% "specs2-core" % "3.8.6" % "test",
-  "org.specs2" %% "specs2-matcher-extra" % "3.8.6" % "test",
-  "org.specs2" %% "specs2-scalacheck" % "3.8.6" % "test",
-  "org.scalaz" %% "scalaz-scalacheck-binding" % "7.2.7-scalacheck-1.13" % "test",
-  "org.slf4j" % "slf4j-simple" % "1.7.25" % "test"
+  "com.github.alexarchambault" %% "scalacheck-shapeless_1.14" % "1.2.3" % Test,
+  "io.chrisdavenport" %% "cats-scalacheck" % "0.3.1" % Test,
+  "org.slf4j" % "slf4j-simple" % "1.7.25" % Test,
+  "org.specs2" %% "specs2-core" % "4.13.2" % Test,
+  "org.specs2" %% "specs2-scalacheck" % "4.13.2" % Test,
+  "org.typelevel" %% "cats-laws" % "2.7.0" % Test,
+  "org.typelevel" %% "discipline-specs2" % "1.3.1" % Test,
 )
 
 // https://tpolecat.github.io/2014/04/11/scalac-flags.html
@@ -29,7 +28,8 @@ libraryDependencies ++= Seq(
 
 scalacOptions ++= Seq(
   "-deprecation",
-  "-encoding", "UTF-8",       // yes, this is 2 args
+  "-encoding",
+  "UTF-8", // yes, this is 2 args
   "-feature",
   "-unchecked",
   "-Ypartial-unification",
@@ -60,27 +60,19 @@ scalacOptions ++= Seq(
   "-Ywarn-nullary-unit",
   "-Ywarn-numeric-widen",
   "-Ywarn-value-discard",
-  "-Yno-predef"   // no automatic import of Predef (removes irritating implicits)
-) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
-  case Some((2, scalaMajor)) if scalaMajor == 11 =>
-    Seq("-Ywarn-unused-import")
-  case Some((2, scalaMajor)) if scalaMajor >= 12 =>
-    Seq(
-      "-Xlint:constant",
-      "-Ywarn-extra-implicit",
-      "-Ywarn-unused:implicits",
-      "-Ywarn-unused:imports",
+  "-Yno-predef", // no automatic import of Predef (removes irritating implicits)
+  "-Xlint:constant",
+  "-Ywarn-extra-implicit",
+  "-Ywarn-unused:implicits",
+  "-Ywarn-unused:imports",
 //      "-Ywarn-unused:locals", // gives an incorrect warning in Forms.scala
-      "-Ywarn-unused:params",
-      "-Ywarn-unused:patvars",
-      "-Ywarn-unused:privates"
-    )
-  case _ =>
-    Seq.empty
-})
+  "-Ywarn-unused:params",
+  "-Ywarn-unused:patvars",
+  "-Ywarn-unused:privates",
+)
 
 //scalacOptions in Test ++= Seq("-Yrangepos")
 
 licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")

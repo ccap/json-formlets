@@ -1,28 +1,34 @@
 package gov.wicourts.json.formlet
 
-import org.specs2.ScalaCheck
-import org.specs2.mutable.Specification
-
-import scalaz.Apply
-import scalaz.scalacheck.ScalazProperties._
-
 import argonaut.Json.jNumber
+import cats.Apply
+import cats.kernel.laws.discipline.EqTests
+import cats.kernel.laws.discipline.MonoidTests
+import org.scalacheck.Arbitrary
+import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen
+import org.scalacheck.Gen
+import org.scalacheck.Shapeless._
+import org.scalacheck.cats.implicits._
+import org.specs2.mutable.Specification
+import org.typelevel.discipline.specs2.mutable.Discipline
 
-import org.scalacheck.{Gen, Arbitrary}
-
-class JsonBuilderSpec extends Specification with ScalaCheck {
+class JsonBuilderLawTests extends Specification with Discipline {
   "JsonArrayBuilder" >> {
     "Type class laws" >> {
       implicit val arbitraryJsonArrayBuilder: Arbitrary[JsonArrayBuilder] = Arbitrary(
-        Gen.listOf(Gen.choose(1, 100)).map(l => new JsonArrayBuilder(l.map(jNumber(_))))
+        Gen.listOf(Gen.choose(1, 100)).map(l => new JsonArrayBuilder(l.map(jNumber(_)))),
       )
 
+      implicit def cogenJsonObjectBuilder: Cogen[JsonArrayBuilder] =
+        Cogen[String].contramap(_.toJson.nospaces)
+
       "Monoid" >> {
-        monoid.laws[JsonArrayBuilder]
+        checkAll("JsonArrayBuilder.MonoidLaws", MonoidTests[JsonArrayBuilder].monoid)
       }
 
       "Equal" >> {
-        equal.laws[JsonArrayBuilder]
+        checkAll("JsonArrayBuilder.EqualLaws", EqTests[JsonArrayBuilder].eqv)
       }
     }
   }
@@ -30,17 +36,20 @@ class JsonBuilderSpec extends Specification with ScalaCheck {
   "JsonObjectBuilder" >> {
     "Type class laws" >> {
       implicit val arbitraryJsonObjectBuilder: Arbitrary[JsonObjectBuilder] = Arbitrary(
-        Gen.listOf(Apply[Gen].tuple2(Gen.alphaStr, Gen.choose(1, 100))).map(l =>
-          new JsonObjectBuilder(l.map { case (s, n) => (s, jNumber(n)) })
-        )
+        Gen
+          .listOf(Apply[Gen].tuple2(Gen.alphaStr, Gen.choose(1, 100)))
+          .map(l => new JsonObjectBuilder(l.map { case (s, n) => (s, jNumber(n)) })),
       )
 
+      implicit def cogenJsonObjectBuilder: Cogen[JsonObjectBuilder] =
+        Cogen[String].contramap(_.toJson.nospaces)
+
       "Monoid" >> {
-        monoid.laws[JsonObjectBuilder]
+        checkAll("JsonObjectBuilder.MonoidLaws", MonoidTests[JsonObjectBuilder].monoid)
       }
 
       "Equal" >> {
-        equal.laws[JsonObjectBuilder]
+        checkAll("JsonObjectBuilder.EqualLaws", EqTests[JsonObjectBuilder].eqv)
       }
     }
   }

@@ -3,24 +3,22 @@ package gov.wicourts.json.formlet
 import argonaut.Argonaut.jString
 import argonaut.Json
 
-import scalaz.std.list._
-import scalaz.std.option._
-import scalaz.syntax.monadPlus._
+import monocle.Lens
 
-import scalaz.{@>, Lens}
-
+import cats.syntax.all._
 import Predef.ArrowAssoc
 
 case class FieldView(name: String, value: Option[Json], label: Option[String], errorName: String) {
+
   def obj: JsonObjectBuilder = {
     val metadataItems =
       List(
-        label.map(l => "label" -> jString(l))
+        label.map(l => "label" -> jString(l)),
       ).unite
 
-    val metadata = metadataItems.headOption.as(
-      ("metadata", Json.obj(metadataItems: _*))
-    ).toList
+    val metadata = metadataItems.headOption
+      .as(("metadata", Json.obj(metadataItems: _*)))
+      .toList
 
     val valueItem = value.map(("value", _)).toList
 
@@ -28,7 +26,7 @@ case class FieldView(name: String, value: Option[Json], label: Option[String], e
 
     new JsonObjectBuilder(
       if (all.isEmpty) Nil
-      else List(name -> Json.obj(all: _*))
+      else List(name -> Json.obj(all: _*)),
     )
   }
 
@@ -36,15 +34,10 @@ case class FieldView(name: String, value: Option[Json], label: Option[String], e
 }
 
 object FieldView {
-  val label: FieldView @> Option[String] =
-    Lens.lensu[FieldView, Option[String]](
-      (a, value) => a.copy(label = value),
-      _.label
-    )
 
-  val errorName: FieldView @> String =
-    Lens.lensu[FieldView, String](
-      (a, value) => a.copy(errorName = value),
-      _.errorName
-    )
+  val label: Lens[FieldView, Option[String]] =
+    Lens[FieldView, Option[String]](_.label)(lbl => _.copy(label = lbl))
+
+  val errorName: Lens[FieldView, String] =
+    Lens[FieldView, String](_.errorName)(err => _.copy(errorName = err))
 }

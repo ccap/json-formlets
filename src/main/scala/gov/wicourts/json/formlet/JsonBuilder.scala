@@ -4,7 +4,6 @@ import argonaut.ArgonautCats._
 import argonaut.Json
 import cats.Eq
 import cats.Monoid
-import cats.syntax.all._
 
 sealed trait JsonBuilder {
   def toJson: Json
@@ -48,7 +47,7 @@ object JsonObjectBuilder {
   }
 
   implicit val jsonObjectBuildEq: Eq[JsonObjectBuilder] =
-    Eq.instance((a1, a2) => a1.items === a2.items)
+    Eq.by(_.items)
 
   def row(name: String, json: Json): JsonObjectBuilder =
     new JsonObjectBuilder(List((name, json)))

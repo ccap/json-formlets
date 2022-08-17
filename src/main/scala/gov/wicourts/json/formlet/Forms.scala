@@ -31,7 +31,7 @@ object Forms {
     value: Option[A],
   ): FieldFormlet[M, Option[A]] =
     Formlet { c =>
-      val result = OptionT( //optionT[Either[NonEmptyList[String], *]](
+      val result = OptionT(
         c.flatMap(_.downField(name))
           .map(_.focus)
           .filterNot(j => j.isNull || j.string.exists(_ === ""))
@@ -148,8 +148,9 @@ object Forms {
         }
 
       type G[AA] = M[(JsonArrayBuilder, Validated[ValidationErrors, AA])]
-      implicit val applicativeG =
-        Applicative[M].compose[Tuple2[JsonArrayBuilder, ?]].compose[Validated[ValidationErrors, ?]]
+      val X = M
+        .compose[Tuple2[JsonArrayBuilder, ?]]
+        .compose[Validated[ValidationErrors, ?]]
       M.map(
         l.zipWithIndex
           .traverse[G, A] {
@@ -163,7 +164,7 @@ object Forms {
                   )
                   .run(i),
               )(_.swap)
-          },
+          }(X),
       ) { case (x, y) => (y, x) }
     }
 

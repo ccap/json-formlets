@@ -115,7 +115,7 @@ object ValidationErrors {
   }
 
   def string(name: String, error: String): ValidationErrors =
-    ObjectErrors(List((name, FieldErrors(NonEmptyList.of(error)))))
+    ObjectErrors(List((name, FieldErrors(NonEmptyList.one(error)))))
 
   def list(name: String, errors: NonEmptyList[String]): ValidationErrors =
     ObjectErrors(List((name, FieldErrors(errors))))

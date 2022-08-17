@@ -252,35 +252,4 @@ class ValidationErrorsSpec extends Specification with ScalaCheck {
 
   }
 
-  /* TODO
-  "Type class laws" >> {
-    implicit val arbitraryValidationErrors: Arbitrary[ValidationErrors] = Arbitrary {
-      def genValidationErrors(arraySize: Int): Gen[ValidationErrors] =
-        Gen.frequency[ValidationErrors](
-          1 -> Apply[Gen].map2(Gen.alphaStr, Gen.listOf(Gen.alphaStr))((h, t) =>
-            FieldErrors(NonEmptyList(h, t)),
-          ),
-          1 -> Gen
-            .listOfN(arraySize, Apply[Gen].tuple2(Gen.alphaStr, genValidationErrors(arraySize / 2)))
-            .map(l => ObjectErrors(l)),
-          1 -> Gen
-            .listOfN(
-              arraySize,
-              Apply[Gen].tuple2(Gen.choose(1, 10), genValidationErrors(arraySize / 2)),
-            )
-            .map(l => ArrayErrors(l)),
-        )
-
-      genValidationErrors(4)
-    }
-
-
-    "Monoid" >> {
-      monoid.laws[ValidationErrors]
-    }
-
-    "Equal" >> {
-      equal.laws[ValidationErrors]
-    }
-  }*/
 }

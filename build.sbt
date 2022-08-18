@@ -2,15 +2,15 @@ name := "json-formlets"
 
 organization := "gov.wicourts"
 
-version := "0.9.0"
+version := "0.9.3"
 
 scalaVersion := "2.12.6"
 crossScalaVersions := Seq("2.11.12", "2.12.6")
 
 libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-core" % "2.8.0",
-  "io.argonaut" %% "argonaut" % "6.3.3",
-  "io.argonaut" %% "argonaut-cats" % "6.3.3",
+  "io.argonaut" %% "argonaut" % "6.3.8",
+  "io.argonaut" %% "argonaut-cats" % "6.3.8",
   "org.slf4j" % "slf4j-api" % "1.7.25",
   "com.github.julien-truffaut" %% "monocle-core" % "1.4.0" 
 )

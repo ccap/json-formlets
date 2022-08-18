@@ -135,11 +135,12 @@ object Forms {
         else {
           type X = Vector[(Option[Cursor], ObjectFormlet[M, A])]
           c.flatMap(_.downArray)
-            .map(c =>
+            .map(arrCursor =>
               traverseBreak(
-                c,
-                Kleisli[State[X, ?], Cursor, Option[Cursor]](c =>
-                  State(l => (l :+ ((c.some, template)), c.some)),
+                arrCursor,
+                Kleisli[State[X, ?], Cursor, Option[Cursor]](elCursor =>
+                  //Note: .right means "the element to the right", not Right(_)
+                  State(l => (l :+ ((elCursor.some, template)), elCursor.right)),
                 ),
               ).apply(Vector()).toList,
             )

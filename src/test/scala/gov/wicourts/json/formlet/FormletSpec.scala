@@ -1,16 +1,11 @@
 package gov.wicourts.json.formlet
 
-//import Predef.ArrowAssoc
 import cats.Id
 import cats.Monoid
 import cats.data.Validated
 import cats.syntax.all._
-//import org.scalacheck.Gen
-//import org.scalacheck.Arbitrary
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
-
-//import gov.wicourts.json.formlet.test.instances._
 
 class FormletSpec extends Specification with ScalaCheck {
   "Formlet" >> {

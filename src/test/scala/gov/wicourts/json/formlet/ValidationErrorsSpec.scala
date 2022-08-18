@@ -1,18 +1,10 @@
 package gov.wicourts.json.formlet
 
-//import org.scalacheck.Gen
-//import org.scalacheck.Arbitrary
-import org.specs2.ScalaCheck
-import org.specs2.mutable.Specification
-
-//import cats.Apply
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
-
-//import gov.wicourts.json.formlet.test.instances._
-//import scalaz.scalacheck.ScalazProperties._
-
+import org.specs2.ScalaCheck
+import org.specs2.mutable.Specification
 import Predef.ArrowAssoc
 
 class ValidationErrorsSpec extends Specification with ScalaCheck {
@@ -24,8 +16,8 @@ class ValidationErrorsSpec extends Specification with ScalaCheck {
     }
 
     "can be added" >> {
-      val e1 = ValidationErrors.fieldErrors(NonEmptyList.of("a"))
-      val e2 = ValidationErrors.fieldErrors(NonEmptyList.of("b"))
+      val e1 = ValidationErrors.fieldErrors(NonEmptyList.one("a"))
+      val e2 = ValidationErrors.fieldErrors(NonEmptyList.one("b"))
 
       (e1 |+| e2).toJson.nospaces must_== """["a","b"]"""
     }
@@ -41,11 +33,11 @@ class ValidationErrorsSpec extends Specification with ScalaCheck {
   "Object errors" >> {
     val errors = ValidationErrors.objectErrors(
       List(
-        "field1" -> ValidationErrors.fieldErrors(NonEmptyList.of("a")),
-        "field2" -> ValidationErrors.fieldErrors(NonEmptyList.of("b")),
+        "field1" -> ValidationErrors.fieldErrors(NonEmptyList.one("a")),
+        "field2" -> ValidationErrors.fieldErrors(NonEmptyList.one("b")),
         "obj1" -> ValidationErrors.objectErrors(
           List(
-            "field3" -> ValidationErrors.fieldErrors(NonEmptyList.of("c")),
+            "field3" -> ValidationErrors.fieldErrors(NonEmptyList.one("c")),
           ),
         ),
       ),
@@ -58,11 +50,11 @@ class ValidationErrorsSpec extends Specification with ScalaCheck {
     "can be added" >> {
       val other = ValidationErrors.objectErrors(
         List(
-          "field1" -> ValidationErrors.fieldErrors(NonEmptyList.of("d")),
-          "field4" -> ValidationErrors.fieldErrors(NonEmptyList.of("b")),
+          "field1" -> ValidationErrors.fieldErrors(NonEmptyList.one("d")),
+          "field4" -> ValidationErrors.fieldErrors(NonEmptyList.one("b")),
           "obj1" -> ValidationErrors.objectErrors(
             List(
-              "field3" -> ValidationErrors.fieldErrors(NonEmptyList.of("x")),
+              "field3" -> ValidationErrors.fieldErrors(NonEmptyList.one("x")),
             ),
           ),
         ),
@@ -75,15 +67,15 @@ class ValidationErrorsSpec extends Specification with ScalaCheck {
       val in = ValidationErrors.objectErrors(
         List(
           "field1" -> ValidationErrors.fieldErrors(NonEmptyList.of("a", "c")),
-          "field1" -> ValidationErrors.fieldErrors(NonEmptyList.of("a")),
-          "field2" -> ValidationErrors.fieldErrors(NonEmptyList.of("b")),
+          "field1" -> ValidationErrors.fieldErrors(NonEmptyList.one("a")),
+          "field2" -> ValidationErrors.fieldErrors(NonEmptyList.one("b")),
         ),
       )
 
       val out = ValidationErrors.objectErrors(
         List(
           "field1" -> ValidationErrors.fieldErrors(NonEmptyList.of("a", "c")),
-          "field2" -> ValidationErrors.fieldErrors(NonEmptyList.of("b")),
+          "field2" -> ValidationErrors.fieldErrors(NonEmptyList.one("b")),
         ),
       )
 
@@ -94,8 +86,8 @@ class ValidationErrorsSpec extends Specification with ScalaCheck {
   "Array errors" >> {
     val errors = ValidationErrors.arrayErrors(
       List(
-        1 -> ValidationErrors.fieldErrors(NonEmptyList.of("a")),
-        4 -> ValidationErrors.fieldErrors(NonEmptyList.of("b")),
+        1 -> ValidationErrors.fieldErrors(NonEmptyList.one("a")),
+        4 -> ValidationErrors.fieldErrors(NonEmptyList.one("b")),
       ),
     )
 
@@ -106,8 +98,8 @@ class ValidationErrorsSpec extends Specification with ScalaCheck {
     "can be added" >> {
       val other = ValidationErrors.arrayErrors(
         List(
-          1 -> ValidationErrors.fieldErrors(NonEmptyList.of("a")),
-          6 -> ValidationErrors.fieldErrors(NonEmptyList.of("c")),
+          1 -> ValidationErrors.fieldErrors(NonEmptyList.one("a")),
+          6 -> ValidationErrors.fieldErrors(NonEmptyList.one("c")),
         ),
       )
       (errors |+| other).toJson.nospaces must_== """[null,["a","a"],null,null,["b"],null,["c"]]"""
@@ -117,15 +109,15 @@ class ValidationErrorsSpec extends Specification with ScalaCheck {
       val in = ValidationErrors.arrayErrors(
         List(
           1 -> ValidationErrors.fieldErrors(NonEmptyList.of("a", "c")),
-          1 -> ValidationErrors.fieldErrors(NonEmptyList.of("a")),
-          2 -> ValidationErrors.fieldErrors(NonEmptyList.of("b")),
+          1 -> ValidationErrors.fieldErrors(NonEmptyList.one("a")),
+          2 -> ValidationErrors.fieldErrors(NonEmptyList.one("b")),
         ),
       )
 
       val out = ValidationErrors.arrayErrors(
         List(
           1 -> ValidationErrors.fieldErrors(NonEmptyList.of("a", "c")),
-          2 -> ValidationErrors.fieldErrors(NonEmptyList.of("b")),
+          2 -> ValidationErrors.fieldErrors(NonEmptyList.one("b")),
         ),
       )
 

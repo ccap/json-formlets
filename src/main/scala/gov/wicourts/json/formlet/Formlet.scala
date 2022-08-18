@@ -8,7 +8,6 @@ import cats.Functor
 import cats.Monad
 import cats.Monoid
 import cats.Semigroup
-import cats.StackSafeMonad
 import cats.Traverse
 import cats.data.EitherT
 import cats.data.Validated
@@ -179,7 +178,7 @@ object Formlet extends FormletSyntax {
       )
   }
 
-  implicit class FormletDisjunction[M[_], I, V, E, A](val self: Formlet[M, Either, I, V, E, A])
+  implicit class FormletEither[M[_], I, V, E, A](val self: Formlet[M, Either, I, V, E, A])
     extends AnyVal {
 
     def flatMap[B](
@@ -245,13 +244,13 @@ object Formlet extends FormletSyntax {
         fa.ap(f)
     }
 
-  implicit def formletDisjunctionMonad[
+  implicit def formletEitherMonad[
     M[_]: Monad,
     I,
     V: Monoid,
     E: Semigroup,
   ]: Monad[Formlet[M, Either, I, V, E, ?]] =
-    new Monad[Formlet[M, Either, I, V, E, ?]] with StackSafeMonad[Formlet[M, Either, I, V, E, ?]] {
+    new Monad[Formlet[M, Either, I, V, E, ?]] {
 
       override def map[A, B](
         a: Formlet[M, Either, I, V, E, A],
@@ -267,6 +266,29 @@ object Formlet extends FormletSyntax {
         f: A => Formlet[M, Either, I, V, E, B],
       ): Formlet[M, Either, I, V, E, B] =
         fa.flatMap(f)
+
+      override def tailRecM[A, B](x: A)(
+        f: A => Formlet[M, Either, I, V, E, Either[A, B]],
+      ): Formlet[M, Either, I, V, E, B] = {
+
+        Formlet { i =>
+          f(x).run(i).flatMap {
+            case (Left(err), v) => Monad[M].pure((err.asLeft, v))
+            case (Right(Left(a)), v) =>
+              Monad[M].tailRecM[(A, V), (Either[E, B], V)]((a, v)) {
+                case (aa, vv) =>
+                  f(aa).run(i).map {
+                    case (Right(Right(r)), fv) =>
+                      (r.asRight[E], Monoid[V].combine(vv, fv)).asRight[(A, V)]
+                    case (Left(err), fv) => (err.asLeft, Monoid[V].combine(vv, fv)).asRight
+                    case (Right(Left(r)), fv) =>
+                      (r, Monoid[V].combine(vv, fv)).asLeft
+                  }
+              }
+            case (Right(Right(b)), v) => Monad[M].pure((b.asRight, v))
+          }
+        }
+      }
     }
 
   def ask[M[_]: Applicative, N[_, _], I, V: Monoid, E](

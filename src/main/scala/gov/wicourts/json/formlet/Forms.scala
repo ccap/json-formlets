@@ -38,7 +38,7 @@ object Forms {
           .asRight[NonEmptyList[String]],
       ).flatMapF(j =>
           j.asRight[NonEmptyList[String]]
-            .ensure(NonEmptyList.of(s"Field $name must be a(n) $descr"))(matches)
+            .ensure(NonEmptyList.one(s"Field $name must be a(n) $descr"))(matches)
             .flatMap(fromJson)
             .map(_.some),
         )
@@ -169,7 +169,7 @@ object Forms {
     }
 
   private def check[A](name: String, descr: String, a: Option[A]): Either[NonEmptyList[String], A] =
-    a.toRight(NonEmptyList.of(s"Expected a $descr when processing field $name"))
+    a.toRight(NonEmptyList.one(s"Expected a $descr when processing field $name"))
 
   private def fromArray[A](
     name: String,
@@ -302,7 +302,7 @@ object Forms {
   def required[M[_]: Functor, A](
     field: FieldFormlet[M, Option[A]],
   ): FieldFormlet[M, A] =
-    field.mapValidation(_.toValid(NonEmptyList.of("This field is required")))
+    field.mapValidation(_.toValid(NonEmptyList.one("This field is required")))
 
   def requiredObj[M[_]: Functor, A](
     name: String,

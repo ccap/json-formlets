@@ -78,7 +78,7 @@ class FormsSpec extends Specification {
     "can be required" >> {
       val a = string("nameL", None).required.eval(None)
 
-      a must_== NonEmptyList.of("This field is required").invalid
+      a must_== NonEmptyList.one("This field is required").invalid
     }
 
     "can associate an error with another field" >> {
@@ -125,12 +125,12 @@ class FormsSpec extends Specification {
       val f = number("count", None).required
         .validate(
           _.valid
-            .ensure(NonEmptyList.of("count must be bigger than 7"))(_.truncateToInt > 7)
-            .ensure(NonEmptyList.of("count must be less than 5"))(_.truncateToInt < 5),
+            .ensure(NonEmptyList.one("count must be bigger than 7"))(_.truncateToInt > 7)
+            .ensure(NonEmptyList.one("count must be less than 5"))(_.truncateToInt < 5),
         )
       val result = f.eval(parse("""{"count":6}"""))
 
-      result must_== NonEmptyList.of("count must be bigger than 7").invalid
+      result must_== NonEmptyList.one("count must be bigger than 7").invalid
     }
 
     "treats an empty string as empty" >> {
@@ -211,7 +211,7 @@ class FormsSpec extends Specification {
         parse("""{"colors":1}"""),
       )
 
-      result must_== NonEmptyList.of("Field colors must be a(n) array of string").invalid
+      result must_== NonEmptyList.one("Field colors must be a(n) array of string").invalid
     }
 
     "should fail if array does not contain required type" >> {
@@ -219,7 +219,7 @@ class FormsSpec extends Specification {
         parse("""{"colors":["red", 1]}"""),
       )
 
-      result must_== NonEmptyList.of("Expected a string when processing field colors").invalid
+      result must_== NonEmptyList.one("Expected a string when processing field colors").invalid
     }
 
     "should treat an empty string as an empty" >> {

@@ -8,7 +8,6 @@ import cats.Functor
 import cats.Id
 import cats.data.Kleisli
 import cats.data.NonEmptyList
-import cats.data.OptionT
 import cats.data.State
 import cats.data.Validated
 import cats.syntax.all._
@@ -31,19 +30,19 @@ object Forms {
     value: Option[A],
   ): FieldFormlet[M, Option[A]] =
     Formlet { c =>
-      val result = OptionT(
-        c.flatMap(_.downField(name))
-          .map(_.focus)
-          .filterNot(j => j.isNull || j.string.exists(_ === ""))
-          .asRight[NonEmptyList[String]],
-      ).flatMapF(j =>
-          j.asRight[NonEmptyList[String]]
-            .ensure(NonEmptyList.one(s"Field $name must be a(n) $descr"))(matches)
-            .flatMap(fromJson)
-            .map(_.some),
-        )
-        .value
-        .toValidated
+      val result: Validated[NonEmptyList[String], Option[A]] =
+        (for {
+          cursor <- c
+          fld <- cursor.downField(name)
+          json = fld.focus
+          if !json.isNull && !json.string.exists(_ === "")
+        } yield json)
+          .traverse(j =>
+            j.asRight[NonEmptyList[String]]
+              .ensure(NonEmptyList.one(s"Field $name must be a(n) $descr"))(matches)
+              .flatMap(fromJson),
+          )
+          .toValidated
 
       if (logger.isDebugEnabled) {
         logger.debug(s"Attempting to parse a $descr named $name")

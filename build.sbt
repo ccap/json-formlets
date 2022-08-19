@@ -2,25 +2,23 @@ name := "json-formlets"
 
 organization := "gov.wicourts"
 
-version := "0.8.1"
+version := "0.9.3"
 
 scalaVersion := "2.12.6"
 crossScalaVersions := Seq("2.11.12", "2.12.6")
 
-resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
-
 libraryDependencies ++= Seq(
-  "org.scalaz" %% "scalaz-core" % "7.2.20" % "compile",
-  "io.argonaut" %% "argonaut" % "6.2",
-  "io.argonaut" %% "argonaut-scalaz" % "6.2",
+  "org.typelevel" %% "cats-core" % "2.8.0",
+  "io.argonaut" %% "argonaut" % "6.3.8",
+  "io.argonaut" %% "argonaut-cats" % "6.3.8",
   "org.slf4j" % "slf4j-api" % "1.7.25",
+  "com.github.julien-truffaut" %% "monocle-core" % "1.4.0" 
 )
 
 libraryDependencies ++= Seq(
   "org.specs2" %% "specs2-core" % "3.8.6" % "test",
   "org.specs2" %% "specs2-matcher-extra" % "3.8.6" % "test",
   "org.specs2" %% "specs2-scalacheck" % "3.8.6" % "test",
-  "org.scalaz" %% "scalaz-scalacheck-binding" % "7.2.7-scalacheck-1.13" % "test",
   "org.slf4j" % "slf4j-simple" % "1.7.25" % "test"
 )
 
